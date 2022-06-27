@@ -27,19 +27,6 @@ var (
 func main() {
 	pflag.Parse()
 
-	fmt.Println("验证原始镜像内容")
-	var hubMirrors struct {
-		Content []string `json:"hub-mirror"`
-	}
-	err := json.Unmarshal([]byte(*content), &hubMirrors)
-	if err != nil {
-		panic(err)
-	}
-	if len(hubMirrors.Content) > *maxContent {
-		panic("content is too long.")
-	}
-	fmt.Printf("%+v\n", hubMirrors)
-
 	fmt.Println("连接 Docker")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -48,7 +35,9 @@ func main() {
 
 	fmt.Println("验证 Docker 用户名密码")
 	if *username == "" || *password == "" {
-		panic("username or password cannot be empty.")
+		config := NewConfig()
+		username = &config.Account.Username
+		password = &config.Account.Password
 	}
 	authConfig := types.AuthConfig{
 		Username: *username,
@@ -63,6 +52,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("验证原始镜像内容")
+	var hubMirrors struct {
+		Content []string `json:"hub-mirror"`
+	}
+	err = json.Unmarshal([]byte(*content), &hubMirrors)
+	if err != nil {
+		panic(err)
+	}
+	if len(hubMirrors.Content) > *maxContent {
+		panic("content is too long.")
+	}
+	fmt.Printf("%+v\n", hubMirrors)
 
 	fmt.Println("开始转换镜像")
 	output := make([]struct {
